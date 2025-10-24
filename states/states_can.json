@@ -95,6 +95,25 @@
             "label": "Тень",
             "type": "bool",
             "default": false
+        },
+        {
+            "name": "volume",
+            "label": "Объем",
+            "type": "enum",
+            "options": [
+                "250 мл",
+                "300 мл",
+                "330 мл",
+                "500 мл",
+                "другое"
+            ],
+            "default": "330 мл"
+        },
+        {
+            "name": "container_name",
+            "label": "Название тары",
+            "type": "text",
+            "default": ""
         }
     ]
 }

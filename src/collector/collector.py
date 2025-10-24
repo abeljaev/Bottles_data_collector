@@ -1,6 +1,7 @@
-import json
 from dataclasses import dataclass, field
 from typing import Dict, Any, List, Tuple
+
+from .config import load_class_spec
 
 Spec = Dict[str, Any]
 
@@ -12,11 +13,13 @@ class AppState:
     preview_h: int = 720
     save_requested: bool = False
     quit_requested: bool = False
+    active_text_field: str = ""  # name of currently editing text field
+    text_input_buffer: str = ""  # buffer for text input
 
 
 def load_spec(path: str) -> Spec:
-    with open(path, "r", encoding="utf-8") as f:
-        return json.load(f)
+    """Load class specification from YAML or JSON file."""
+    return load_class_spec(path)
 
 
 def specs_and_defaults(
@@ -35,5 +38,7 @@ def specs_and_defaults(
                 d[a["name"]] = a.get("default", a["options"][0])
             elif a["type"] == "bool":
                 d[a["name"]] = bool(a.get("default", False))
+            elif a["type"] == "text":
+                d[a["name"]] = a.get("default", "")
         defaults[cls] = d
     return specs, defaults

@@ -56,6 +56,22 @@
             "label": "Тень",
             "type": "bool",
             "default": false
+        },
+        {
+            "name": "volume",
+            "label": "Объем",
+            "type": "enum",
+            "options": [
+                "н/д",
+                "другое"
+            ],
+            "default": "н/д"
+        },
+        {
+            "name": "container_name",
+            "label": "Название",
+            "type": "text",
+            "default": ""
         }
     ]
 }

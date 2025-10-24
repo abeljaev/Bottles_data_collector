@@ -1,0 +1,78 @@
+# Bottles Classifier Data Collector Configuration
+
+# Application settings
+app:
+  title: "Сборщик данных для классификатора бутылок"
+  version: "2.0.0"
+
+# Server settings
+server:
+  host: "127.0.0.1"
+  port: 7860
+  auto_open_browser: true
+
+# Camera settings
+camera:
+  # Maximum number of camera devices to probe
+  max_devices: 10
+
+  # Suppress OpenCV warnings during camera detection
+  suppress_warnings: true
+
+# Data collection settings
+data:
+  # Output directory for collected dataset
+  output_dir: "dataset"
+
+  # Image format and quality
+  image:
+    format: "jpg"
+    quality: 95
+
+  # Session directory structure: dataset/YYYYMMDD/session_NN/
+  session:
+    create_date_folders: true
+    auto_increment: true
+
+# Class specifications (YAML files)
+classes:
+  pet: "states/pet.yaml"
+  can: "states/can.yaml"
+  foreign: "states/foreign.yaml"
+
+# UI settings
+ui:
+  # Theme for Gradio interface
+  theme: "soft"  # options: soft, default, monochrome
+
+  # Video display
+  video:
+    update_interval: 0.033  # ~30 FPS
+
+  # Attributes panel
+  attributes:
+    max_height: "70vh"
+    show_scrollbar: true
+
+  # Statistics panel
+  statistics:
+    show: true
+    update_on_save: true
+
+# Font settings (for Cyrillic support)
+font:
+  path: "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+  fallback: true  # Use system default if specified font not found
+
+# Logging settings
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR
+  format: "<green>{time:HH:mm:ss}</green> | <level>{level: <8}</level> | <level>{message}</level>"
+
+# Export settings
+export:
+  # CSV export settings
+  csv:
+    delimiter: ","
+    encoding: "utf-8-sig"  # UTF-8 with BOM for Excel compatibility
+    include_timestamp: true

@@ -1,0 +1,120 @@
+# Спецификация атрибутов для класса PET (ПЭТ бутылки)
+
+class: PET
+
+attributes:
+  # Степень деформации бутылки
+  - name: deformation
+    label: Деформация
+    type: enum
+    options:
+      - нет
+      - лёгкая
+      - сильная
+    default: нет
+
+  # Уровень заполнения жидкостью
+  - name: fill
+    label: Заполнение
+    type: enum
+    options:
+      - пустая
+      - мало
+      - средне
+      - почти полная
+    default: пустая
+
+  # Прозрачность материала
+  - name: transparency
+    label: Прозрачность ПЭТ
+    type: enum
+    options:
+      - прозрачная
+      - цветная
+      - матовая
+    default: прозрачная
+
+  # Наличие этикетки
+  - name: label
+    label: Этикетка
+    type: enum
+    options:
+      - нет
+      - частично
+      - полная
+    default: нет
+
+  # Положение в кадре
+  - name: pose
+    label: Поза
+    type: enum
+    options:
+      - плоско
+      - на ребре
+      - под углом
+    default: плоско
+
+  # Количество объектов
+  - name: multi
+    label: Количество
+    type: enum
+    options:
+      - одна
+      - 2–3
+      - пачка
+    default: одна
+
+  # Расположение в кадре
+  - name: area
+    label: Область кадра
+    type: enum
+    options:
+      - центр
+      - край
+      - частично скрыта
+    default: центр
+
+  # Мокрая поверхность
+  - name: wet
+    label: Мокрая
+    type: bool
+    default: false
+
+  # Наличие конденсата
+  - name: condensate
+    label: Конденсат
+    type: bool
+    default: false
+
+  # Блики на поверхности
+  - name: glossy
+    label: Блики/глянец
+    type: bool
+    default: false
+
+  # Наличие тени
+  - name: shadow
+    label: Тень
+    type: bool
+    default: false
+
+  # Объем тары
+  - name: volume
+    label: Объем
+    type: enum
+    options:
+      - 250 мл
+      - 300 мл
+      - 330 мл
+      - 500 мл
+      - 1 л
+      - 1.5 л
+      - 2 л
+      - другое
+    default: 500 мл
+
+  # Название/бренд (свободный ввод)
+  - name: container_name
+    label: Название тары
+    type: text
+    default: ""
