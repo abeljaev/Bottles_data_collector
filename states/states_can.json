@@ -1,0 +1,100 @@
+{
+    "class": "CAN",
+    "attributes": [
+        {
+            "name": "deformation",
+            "label": "Деформация",
+            "type": "enum",
+            "options": [
+                "нет",
+                "лёгкая",
+                "сильная"
+            ],
+            "default": "нет"
+        },
+        {
+            "name": "fill",
+            "label": "Заполнение",
+            "type": "enum",
+            "options": [
+                "пустая",
+                "мало",
+                "средне",
+                "почти полная"
+            ],
+            "default": "пустая"
+        },
+        {
+            "name": "finish",
+            "label": "Покрытие",
+            "type": "enum",
+            "options": [
+                "матовая",
+                "глянцевая"
+            ],
+            "default": "матовая"
+        },
+        {
+            "name": "label",
+            "label": "Этикетка",
+            "type": "enum",
+            "options": [
+                "нет",
+                "частично",
+                "полная"
+            ],
+            "default": "нет"
+        },
+        {
+            "name": "pose",
+            "label": "Поза",
+            "type": "enum",
+            "options": [
+                "плоско",
+                "на ребре",
+                "под углом"
+            ],
+            "default": "плоско"
+        },
+        {
+            "name": "multi",
+            "label": "Количество",
+            "type": "enum",
+            "options": [
+                "одна",
+                "2–3",
+                "пачка"
+            ],
+            "default": "одна"
+        },
+        {
+            "name": "area",
+            "label": "Область кадра",
+            "type": "enum",
+            "options": [
+                "центр",
+                "край",
+                "частично скрыта"
+            ],
+            "default": "центр"
+        },
+        {
+            "name": "wet",
+            "label": "Мокрая",
+            "type": "bool",
+            "default": false
+        },
+        {
+            "name": "condensate",
+            "label": "Конденсат",
+            "type": "bool",
+            "default": false
+        },
+        {
+            "name": "shadow",
+            "label": "Тень",
+            "type": "bool",
+            "default": false
+        }
+    ]
+}
