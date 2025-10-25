@@ -44,35 +44,16 @@ attributes:
       - полная
     default: нет
 
-  # Положение в кадре
-  - name: pose
-    label: Поза
+  # Расположение относительно отверстия короба
+  - name: position
+    label: Позиция в коробе
     type: enum
     options:
-      - плоско
-      - на ребре
-      - под углом
-    default: плоско
-
-  # Количество объектов
-  - name: multi
-    label: Количество
-    type: enum
-    options:
-      - одна
-      - 2–3
-      - пачка
-    default: одна
-
-  # Расположение в кадре
-  - name: area
-    label: Область кадра
-    type: enum
-    options:
-      - центр
-      - край
-      - частично скрыта
-    default: центр
+      - далеко от отверстия
+      - в центре
+      - близко к отверстию
+      - занимает всё
+    default: в центре
 
   # Мокрая поверхность
   - name: wet
@@ -83,18 +64,6 @@ attributes:
   # Наличие конденсата
   - name: condensate
     label: Конденсат
-    type: bool
-    default: false
-
-  # Блики на поверхности
-  - name: glossy
-    label: Блики/глянец
-    type: bool
-    default: false
-
-  # Наличие тени
-  - name: shadow
-    label: Тень
     type: bool
     default: false
 

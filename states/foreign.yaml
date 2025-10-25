@@ -18,41 +18,44 @@ attributes:
       - другое
     default: другое
 
-  # Количество объектов
-  - name: multi
-    label: Количество
-    type: enum
-    options:
-      - один
-      - 2–3
-      - пачка
-    default: один
-
-  # Расположение в кадре
-  - name: area
-    label: Область кадра
-    type: enum
-    options:
-      - центр
-      - край
-      - частично скрыт
-    default: центр
-
-  # Блики на поверхности
-  - name: glossy
-    label: Блики/глянец
+  # Является ли объект тарой (не PET/CAN)
+  - name: is_container
+    label: Это тара?
     type: bool
     default: false
+
+  # Материал объекта
+  - name: material
+    label: Материал
+    type: enum
+    options:
+      - стекло
+      - металл
+      - пластик
+      - смешанное
+      - н/д
+    default: н/д
+
+  # Несколько объектов/тар в кадре
+  - name: multiple_items
+    label: Несколько объектов?
+    type: bool
+    default: false
+
+  # Расположение относительно отверстия короба
+  - name: position
+    label: Позиция в коробе
+    type: enum
+    options:
+      - далеко от отверстия
+      - в центре
+      - близко к отверстию
+      - занимает всё
+    default: в центре
 
   # Мокрый объект
   - name: wet
     label: Мокрый
-    type: bool
-    default: false
-
-  # Наличие тени
-  - name: shadow
-    label: Тень
     type: bool
     default: false
 

@@ -7,51 +7,47 @@ from typing import Tuple, Dict, Any
 from loguru import logger
 
 
-def ensure_date_dir(root="dataset") -> pathlib.Path:
-    """Create date-based directory structure without sessions."""
-    today = datetime.now().strftime("%Y%m%d")
-    date_dir = pathlib.Path(root) / today
-    (date_dir / "images").mkdir(parents=True, exist_ok=True)
-    (date_dir / "meta").mkdir(parents=True, exist_ok=True)
-    return date_dir
+def ensure_dataset_dir(root="dataset") -> pathlib.Path:
+    """Create simple dataset directory structure."""
+    dataset_dir = pathlib.Path(root)
+    (dataset_dir / "images").mkdir(parents=True, exist_ok=True)
+    (dataset_dir / "meta").mkdir(parents=True, exist_ok=True)
+    return dataset_dir
 
 
 def save_sample(
-    date_dir: pathlib.Path, frame_bgr, meta: Dict[str, Any]
+    dataset_dir: pathlib.Path, frame_bgr, meta: Dict[str, Any]
 ) -> Tuple[pathlib.Path, pathlib.Path]:
-    """Save image and metadata to date directory."""
+    """Save image and metadata to dataset directory."""
     ts = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-    img_path = date_dir / "images" / f"{ts}.jpg"
-    json_path = date_dir / "meta" / f"{ts}.json"
+    img_path = dataset_dir / "images" / f"{ts}.jpg"
+    json_path = dataset_dir / "meta" / f"{ts}.json"
     cv.imwrite(str(img_path), frame_bgr, [cv.IMWRITE_JPEG_QUALITY, 95])
     with open(json_path, "w", encoding="utf-8") as f:
         json.dump(meta, f, ensure_ascii=False, indent=2)
     return img_path, json_path
 
 
-def append_to_csv(
-    export_dir: pathlib.Path,
+def append_to_class_csv(
+    root_dir: pathlib.Path,
+    class_name: str,
     image_filename: str,
     meta: Dict[str, Any],
     delimiter: str = ",",
     encoding: str = "utf-8-sig"
 ) -> bool:
     """
-    Append a single record to the daily CSV file.
-    Creates the file with headers if it doesn't exist.
+    Append a single record to the class-specific CSV file.
+    Creates pet.csv, can.csv, or foreign.csv based on class_name.
     """
     try:
-        # Ensure export directory exists
-        export_dir.mkdir(parents=True, exist_ok=True)
-
-        # CSV file for today
-        today = datetime.now().strftime("%Y%m%d")
-        csv_path = export_dir / f"export_{today}.csv"
+        # CSV file named after the class (lowercase)
+        csv_filename = f"{class_name.lower()}.csv"
+        csv_path = root_dir / csv_filename
 
         # Prepare record
         record = {
             "image_file": image_filename,
-            "class": meta.get("class", ""),
             "timestamp": meta.get("timestamp", ""),
         }
 
@@ -61,7 +57,7 @@ def append_to_csv(
             # Convert boolean to readable format
             if isinstance(attr_value, bool):
                 attr_value = "да" if attr_value else "нет"
-            record[f"attr_{attr_name}"] = attr_value
+            record[attr_name] = attr_value
 
         # Add capture metadata
         capture = meta.get("capture", {})

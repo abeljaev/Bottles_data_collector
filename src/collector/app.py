@@ -4,8 +4,12 @@ import os
 os.environ.setdefault('OPENCV_LOG_LEVEL', 'ERROR')
 os.environ.setdefault('OPENCV_VIDEOIO_DEBUG', '0')
 
+# IMPORTANT: Clear proxy environment variables BEFORE importing gradio
+for proxy_var in ['HTTP_PROXY', 'HTTPS_PROXY', 'http_proxy', 'https_proxy', 'ALL_PROXY', 'all_proxy']:
+    os.environ.pop(proxy_var, None)
+
 from datetime import datetime
-from typing import List, Tuple, Dict, Any
+from typing import List, Dict, Any
 import sys
 import cv2 as cv
 import numpy as np
@@ -180,37 +184,9 @@ def select_mode(cam_id: int) -> Dict[str, Any]:
 def create_gradio_interface(ui: GradioCollectorUI, cam_id: int, mode: Dict[str, Any], show_stats: bool = True) -> gr.Blocks:
     """Create the Gradio interface."""
 
-    # Custom CSS for layout and scrollable attributes panel
+    # Custom CSS for layout
     custom_css = """
-    /* Attributes scroll panel - only scroll the attributes, not the whole page */
-    #attributes-scroll {
-        max-height: 70vh;
-        overflow-y: auto;
-        overflow-x: hidden;
-        padding-right: 10px;
-        margin-top: 10px;
-    }
-
-    /* Custom scrollbar styling */
-    #attributes-scroll::-webkit-scrollbar {
-        width: 8px;
-    }
-
-    #attributes-scroll::-webkit-scrollbar-track {
-        background: #f1f1f1;
-        border-radius: 4px;
-    }
-
-    #attributes-scroll::-webkit-scrollbar-thumb {
-        background: #888;
-        border-radius: 4px;
-    }
-
-    #attributes-scroll::-webkit-scrollbar-thumb:hover {
-        background: #555;
-    }
-
-    /* Video output - center and fit properly */
+    /* Video output centering */
     #video-output {
         display: flex;
         justify-content: center;
@@ -221,11 +197,6 @@ def create_gradio_interface(ui: GradioCollectorUI, cam_id: int, mode: Dict[str, 
         max-width: 100%;
         height: auto;
         object-fit: contain;
-    }
-
-    /* Prevent page scroll */
-    body {
-        overflow-y: auto;
     }
     """
 
@@ -242,70 +213,128 @@ def create_gradio_interface(ui: GradioCollectorUI, cam_id: int, mode: Dict[str, 
                     container=True
                 )
 
+                gr.Markdown(
+                    """### Советы по съёмке
+- Держите объект в центре кадра
+- Следите за фокусом и бликами
+- Перед сохранением проверьте правильность атрибутов
+"""
+                )
+
             # Right column: Controls
-            with gr.Column(scale=1):
-                gr.Markdown("## Класс объекта")
+            with gr.Column(scale=1, elem_id="controls-container"):
+                current_class_state = gr.State(ui.current_class)
+
+                gr.Markdown("## Быстрый старт")
+                gr.Markdown(
+                    "1. Выберите класс объекта\n"
+                    "2. Заполните ключевые атрибуты\n"
+                    "3. Нажмите **Сохранить кадр**"
+                )
+
+                class_labels = {
+                    "PET": "🔵 PET — пластиковая тара",
+                    "CAN": "🟢 CAN — алюминиевая банка",
+                    "FOREIGN": "🟡 FOREIGN — посторонний объект",
+                }
+
+                for class_name in ui.specs.keys():
+                    class_labels.setdefault(class_name, class_name)
+
+                class_choices = list(ui.specs.keys())
+
                 class_radio = gr.Radio(
-                    choices=["PET", "CAN", "FOREIGN"],
-                    value="PET",
-                    label="Выберите класс",
-                    interactive=True
+                    choices=class_choices,
+                    value=ui.current_class,
+                    label="Класс объекта",
+                    interactive=True,
+                    info="Выбор влияет на состав атрибутов"
+                )
+
+                gr.Markdown(
+                    "\n".join(f"- {class_labels[name]}" for name in class_choices)
                 )
 
                 gr.Markdown("## Атрибуты")
-                # Scrollable attributes section
-                with gr.Column(elem_id="attributes-scroll"):
-                    attributes_column = gr.Column()
 
-                with attributes_column:
-                    # Dynamically populated based on class
-                    attribute_widgets = []
-                    spec = ui.specs[ui.current_class]
+                class_groups = {}
+                pending_attribute_handlers = []
+                attribute_components_order = []
 
-                    for attr in spec["attributes"]:
-                        attr_name = attr["name"]
-                        attr_label = attr.get("label", attr_name)
-                        attr_type = attr["type"]
+                for class_name, spec in ui.specs.items():
+                    with gr.Group(visible=(class_name == ui.current_class)) as class_group:
+                        for attr in spec["attributes"]:
+                            attr_name = attr["name"]
+                            attr_label = attr.get("label", attr_name)
+                            attr_type = attr["type"]
 
-                        if attr_type == "enum":
-                            widget = gr.Radio(
-                                choices=attr["options"],
-                                value=ui.attributes.get(attr_name, attr.get("default", attr["options"][0])),
-                                label=attr_label,
-                                interactive=True
-                            )
-                            widget.change(
-                                lambda val, name=attr_name: ui.update_attribute(name, val),
-                                inputs=[widget]
-                            )
-                        elif attr_type == "bool":
-                            widget = gr.Checkbox(
-                                value=ui.attributes.get(attr_name, attr.get("default", False)),
-                                label=attr_label,
-                                interactive=True
-                            )
-                            widget.change(
-                                lambda val, name=attr_name: ui.update_attribute(name, val),
-                                inputs=[widget]
-                            )
-                        elif attr_type == "text":
-                            widget = gr.Textbox(
-                                value=ui.attributes.get(attr_name, attr.get("default", "")),
-                                label=attr_label,
-                                interactive=True,
-                                placeholder="Введите текст..."
-                            )
-                            widget.change(
-                                lambda val, name=attr_name: ui.update_attribute(name, val),
-                                inputs=[widget]
-                            )
+                            if attr_type == "enum":
+                                widget = gr.Radio(
+                                    choices=attr["options"],
+                                    value=ui.class_attributes[class_name].get(
+                                        attr_name, attr.get("default", attr["options"][0])
+                                    ),
+                                    label=attr_label,
+                                    interactive=True
+                                )
+                            elif attr_type == "bool":
+                                widget = gr.Checkbox(
+                                    value=ui.class_attributes[class_name].get(
+                                        attr_name, attr.get("default", False)
+                                    ),
+                                    label=attr_label,
+                                    interactive=True
+                                )
+                            elif attr_type == "text":
+                                widget = gr.Textbox(
+                                    value=ui.class_attributes[class_name].get(
+                                        attr_name, attr.get("default", "")
+                                    ),
+                                    label=attr_label,
+                                    lines=1,
+                                    interactive=True,
+                                    placeholder="Введите текст..."
+                                )
+                            else:
+                                continue
 
-                        attribute_widgets.append(widget)
+                            pending_attribute_handlers.append((widget, class_name, attr_name))
+                            attribute_components_order.append((class_name, attr_name, widget))
+
+                        class_groups[class_name] = class_group
+
+                class_group_keys = list(class_groups.keys())
+                class_group_list = [class_groups[name] for name in class_group_keys]
+                attribute_component_list = [component for (_, _, component) in attribute_components_order]
+
+                reset_button = gr.Button("↩️ Сбросить атрибуты", variant="secondary", size="sm")
 
                 gr.Markdown("---")
 
                 save_button = gr.Button("💾 Сохранить кадр", variant="primary", size="lg")
-                save_status = gr.Textbox(label="Статус", interactive=False, show_label=False)
+                save_status = gr.Markdown(value="Готово к сохранению")
+
+                for component, class_name, attr_name in pending_attribute_handlers:
+                    def make_attr_handler(attribute_name: str, target_class: str):
+                        def _handler(value):
+                            ui.update_attribute(target_class, attribute_name, value)
+                            attr_label = (
+                                ui.class_attribute_specs
+                                .get(target_class, {})
+                                .get(attribute_name, {})
+                                .get("label", attribute_name)
+                            )
+                            message = f"✏️ Изменено: {attr_label} ({class_labels.get(target_class, target_class)})"
+                            return message
+
+                        return _handler
+
+                    component.change(
+                        make_attr_handler(attr_name, class_name),
+                        inputs=[component],
+                        outputs=[save_status],
+                        queue=False
+                    )
 
                 # Statistics panel (if enabled)
                 if show_stats:
@@ -314,19 +343,6 @@ def create_gradio_interface(ui: GradioCollectorUI, cam_id: int, mode: Dict[str, 
                         value=ui.get_statistics(),
                         label="Статистика"
                     )
-
-                # CSV Export button
-                gr.Markdown("---")
-                gr.Markdown("### 📊 Экспорт данных")
-                gr.Markdown("*CSV создается автоматически при сохранении в `export_data/`*")
-
-                export_all_btn = gr.Button("📦 Экспорт всех данных", size="sm")
-                export_status = gr.Textbox(
-                    label="Статус экспорта",
-                    interactive=False,
-                    show_label=False,
-                    placeholder="Создать полный архив всех данных..."
-                )
 
         # Video streaming using timer
         timer = gr.Timer(value=0.033, active=True)  # ~30 FPS
@@ -339,9 +355,34 @@ def create_gradio_interface(ui: GradioCollectorUI, cam_id: int, mode: Dict[str, 
         # Class selection
         def on_class_change(new_class):
             ui.update_class(new_class)
-            return f"✅ Класс изменен на: {new_class}"
 
-        class_radio.change(on_class_change, inputs=class_radio, outputs=save_status)
+            state_update = new_class
+            status_message = f"✅ Активный класс: {class_labels.get(new_class, new_class)}"
+
+            group_updates = []
+            for idx, name in enumerate(class_group_keys):
+                group_updates.append(gr.update(visible=(name == new_class)))
+
+            component_updates = []
+            for idx, (class_name, attr_name, _) in enumerate(attribute_components_order):
+                if class_name == new_class:
+                    value = ui.class_attributes[class_name].get(attr_name)
+                    component_updates.append(gr.update(value=value))
+                else:
+                    component_updates.append(gr.update())
+
+            return [state_update, status_message, *group_updates, *component_updates]
+
+        class_radio.change(
+            on_class_change,
+            inputs=class_radio,
+            outputs=[
+                current_class_state,
+                save_status,
+                *class_group_list,
+                *attribute_component_list,
+            ],
+        )
 
         # Save button
         if show_stats:
@@ -350,12 +391,36 @@ def create_gradio_interface(ui: GradioCollectorUI, cam_id: int, mode: Dict[str, 
                 stats = ui.get_statistics()
                 return result, stats
 
-            save_button.click(save_and_update_stats, outputs=[save_status, statistics_display])
+            save_button.click(
+                save_and_update_stats,
+                outputs=[save_status, statistics_display],
+            )
         else:
             save_button.click(ui.save_current_frame, outputs=save_status)
 
-        # CSV Export button
-        export_all_btn.click(ui.export_all_data_csv, outputs=export_status)
+        def on_reset(class_name):
+            ui.reset_attributes(class_name)
+            status_message = f"🔄 Атрибуты сброшены для: {class_labels.get(class_name, class_name)}"
+
+            component_updates = []
+            for idx, (attr_class, attr_name, _) in enumerate(attribute_components_order):
+                if attr_class == class_name:
+                    value = ui.class_attributes[attr_class].get(attr_name)
+                    component_updates.append(gr.update(value=value))
+                else:
+                    component_updates.append(gr.update())
+
+            return [status_message, *component_updates]
+
+        reset_button.click(
+            on_reset,
+            inputs=current_class_state,
+            outputs=[
+                save_status,
+                *attribute_component_list,
+            ],
+            queue=False,
+        )
 
     return demo
 
@@ -411,10 +476,6 @@ def main():
 
     try:
         logger.info("Launching Gradio interface...")
-
-        # Clear proxy environment variables that may interfere
-        for proxy_var in ['HTTP_PROXY', 'HTTPS_PROXY', 'http_proxy', 'https_proxy', 'ALL_PROXY']:
-            os.environ.pop(proxy_var, None)
 
         demo.queue()  # Enable queue for better stability
         demo.launch(

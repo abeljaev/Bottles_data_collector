@@ -92,38 +92,50 @@ Statistics tracking:
 
 ### UI Widget System
 
-The UI uses a custom widget system (`Widget` dataclass in `ui.py`) with clickable regions:
-- `class_radio`: Class selection (PET/CAN/FOREIGN)
-- `attr_enum`: Enumerated attribute selection (radio buttons)
-- `attr_bool`: Boolean attribute toggle (checkboxes)
-- `attr_text`: Text input fields (click to activate, supports ASCII text input with Backspace, Enter to confirm, ESC to cancel)
-- `save`, `quit`: Action buttons
+The UI uses Gradio's native widget system:
+- `class_radio`: Class selection (PET/CAN/FOREIGN) - gr.Radio
+- `attr_enum`: Enumerated attribute selection - gr.Radio
+- `attr_bool`: Boolean attribute toggle - gr.Checkbox
+- `attr_text`: Text input fields - gr.Textbox (supports full Unicode/Cyrillic)
+- `save`, `quit`: Action buttons - gr.Button
 
-Mouse events are mapped to widget bounding boxes to handle interactions. Text fields show active state with green highlight and cursor when clicked.
-
-### Keyboard Shortcuts
-
-- `1/2/3`: Switch to PET/CAN/FOREIGN class
-- `s`: Save current frame with metadata
-- `q` or `Esc`: Quit application
+Widget events are handled via Gradio's `.change()` and `.click()` callbacks. All attribute changes are immediately synchronized to internal state.
 
 ## Dataset Output Structure
 
 ```
 dataset/
 └── YYYYMMDD/
-    └── session_NN/
-        ├── images/
-        │   └── YYYYMMDD_HHMMSS_ffffff.jpg
-        └── meta/
-            └── YYYYMMDD_HHMMSS_ffffff.json
+    ├── images/
+    │   └── YYYYMMDD_HHMMSS_ffffff.jpg
+    └── meta/
+        └── YYYYMMDD_HHMMSS_ffffff.json
+
+export_data/
+└── export_YYYYMMDD.csv  # Auto-generated daily CSV
 ```
 
 Metadata includes timestamp, class, attributes, camera settings, and session directory path.
 
-## Cyrillic Text Rendering
+## CSV Export System
 
-The application uses PIL (Pillow) for rendering Russian text with TrueType fonts. The font path is hardcoded to `/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf`. The `put_text()` function in `ui.py` handles font rendering and falls back to OpenCV's built-in font if the font file is not found.
+The application provides two CSV export mechanisms:
+
+1. **Auto-export on save** (`io_utils.py:append_to_csv`):
+   - Automatically appends each saved frame to a daily CSV in `export_data/`
+   - Creates `export_YYYYMMDD.csv` with headers if not exists
+   - Immediate availability for analysis without manual export
+
+2. **Full export** (`export.py:export_all_sessions_to_csv`):
+   - Exports all historical data from `dataset/` directory
+   - Creates timestamped file: `full_export_YYYYMMDD_HHMMSS.csv`
+   - Scans all date directories and aggregates metadata
+
+CSV features:
+- Boolean values converted to "да"/"нет" for readability
+- UTF-8 with BOM encoding for Excel compatibility
+- Configurable delimiter and timestamp inclusion via `config.yaml`
+- Flattened structure with `attr_` prefix for all attributes
 
 ## Interactive Camera Setup
 
@@ -149,20 +161,83 @@ The `find_cameras()` function probes camera devices 0-9 to detect available came
 
 - Video streaming via `gr.Timer` (~30 FPS refresh)
 - State management in `GradioCollectorUI` class
-- Dynamic widget generation based on JSON specifications
+- Dynamic widget generation based on YAML specifications
 - Gradio launches on `http://127.0.0.1:7860` with auto-open browser
 
-### Features:
+## Important Implementation Details
 
-1. **Text Input Fields**: Native HTML `<input>` elements with full Unicode support
-2. **Volume and Container Name**: All three classes (PET, CAN, FOREIGN) include:
-   - `volume` (enum): Radio buttons for predefined options
-   - `container_name` (text): Text input field
-3. **Rich CLI**: Terminal UI for camera/mode selection only
-4. **Statistics Panel**: Real-time display of saved frame counts by class
-5. **CSV Export**:
-   - Export current session metadata to CSV
-   - Export all sessions to a single CSV file
-   - Boolean values converted to "да"/"нет" for readability
-   - UTF-8 with BOM encoding for Excel compatibility
-6. **YAML Configuration**: All settings in `config.yaml` with sensible defaults
+### Image Format Handling
+
+**Critical**: The application maintains BGR format from camera throughout the pipeline:
+- Frames are captured in BGR format from OpenCV
+- BGR frames are stored in `self.current_frame` without conversion
+- Only converted to RGB for Gradio display in `get_video_frame()`
+- **Images are saved in BGR format** via `cv.imwrite()` in `io_utils.py:save_sample()`
+
+This ensures correct color representation in saved images and avoids unnecessary conversions.
+
+### Configuration System
+
+The `AppConfig` dataclass uses a fallback pattern:
+- Attempts to load `config.yaml` with structured parsing
+- Falls back to defaults if file missing or invalid
+- Supports nested YAML structure with clear hierarchy
+- Logger warnings for missing config, not errors
+
+### Attribute Specification Loading
+
+The `load_class_spec()` function in `config.py` implements a flexible loading strategy:
+1. Try YAML with `.yaml` extension first
+2. Fallback to JSON with `.json` extension
+3. Try exact path with extension detection
+4. Raise `FileNotFoundError` only if all attempts fail
+
+### Statistics Panel
+
+Statistics are tracked in `GradioCollectorUI.statistics` dictionary and updated via:
+- Increment counters in `save_current_frame()` after successful save
+- Format display string in `get_statistics()` method
+- Auto-update in UI via Gradio's output binding when `show_statistics=True`
+
+### Video Frame Updates
+
+The Gradio interface uses `gr.Timer` for video streaming:
+- Timer set to 0.033s (~30 FPS) in `create_gradio_interface()`
+- Each tick calls `update_video()` which returns `ui.get_video_frame()`
+- Frame capture and display are decoupled from save operations
+- Placeholder image shown if camera unavailable
+
+## Extending the Application
+
+### Adding New Attributes
+
+1. Edit the relevant YAML file in `states/` (pet.yaml, can.yaml, or foreign.yaml)
+2. Add new attribute definition:
+   ```yaml
+   - name: new_attribute
+     label: Название атрибута
+     type: enum  # or bool, text
+     options:  # only for enum
+       - option1
+       - option2
+     default: option1
+   ```
+3. No code changes required - UI will auto-generate widgets
+
+### Adding New Classes
+
+1. Create new YAML specification file in `states/`
+2. Update `config.yaml` to reference new spec file
+3. Update `specs_and_defaults()` in `collector.py` to include new class
+4. Update class radio choices in `create_gradio_interface()` in `app.py`
+
+### Customizing Export Format
+
+Edit `config.yaml`:
+```yaml
+export:
+  csv:
+    delimiter: ";"  # Change to semicolon
+    encoding: "utf-8"  # Remove BOM
+    include_timestamp: false  # Hide timestamps
+```
