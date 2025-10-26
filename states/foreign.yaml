@@ -42,6 +42,16 @@ attributes:
     type: bool
     default: false
 
+  # Причина классификации как FOREIGN
+  - name: reason
+    label: Причина FOREIGN
+    type: enum
+    options:
+      - несколько объектов
+      - не та тара
+      - посторонний предмет
+    default: посторонний предмет
+
   # Расположение относительно отверстия короба
   - name: position
     label: Позиция в коробе

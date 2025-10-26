@@ -64,10 +64,15 @@ The `AppState` dataclass (in `collector.py`) tracks:
 - `active_text_field`: Name of currently active text field for editing
 - `text_input_buffer`: Temporary buffer for text input
 
-Attribute specifications are loaded from YAML files in `states/` directory (with JSON fallback support), which define:
-- `enum` attributes: Radio button selection (e.g., "deformation", "fill", "volume")
-- `bool` attributes: Checkbox toggles (e.g., "wet", "condensate", "shadow")
+Attribute specifications are loaded from YAML files in `states/` directory, which define:
+- `enum` attributes: Radio button selection (e.g., "deformation", "fill", "volume", "neck_direction")
+- `bool` attributes: Checkbox toggles (e.g., "wet", "condensate", "cap_present", "glare", "shadow")
 - `text` attributes: Text input fields (e.g., "container_name") with full Unicode support
+
+**Current attribute counts:**
+- PET: 13 attributes (deformation, fill, transparency, label, position, neck_direction, cap_present, wet, condensate, glare, shadow, volume, container_name)
+- CAN: 11 attributes (deformation, fill, finish, label, position, wet, condensate, glare, shadow, volume, container_name)
+- FOREIGN: 9 attributes (subtype, is_container, material, multiple_items, reason, position, wet, volume, container_name)
 
 Statistics tracking:
 - Real-time counters for saved frames per class (PET, CAN, FOREIGN)
@@ -105,37 +110,37 @@ Widget events are handled via Gradio's `.change()` and `.click()` callbacks. All
 
 ```
 dataset/
-└── YYYYMMDD/
-    ├── images/
-    │   └── YYYYMMDD_HHMMSS_ffffff.jpg
-    └── meta/
-        └── YYYYMMDD_HHMMSS_ffffff.json
-
-export_data/
-└── export_YYYYMMDD.csv  # Auto-generated daily CSV
+├── images/
+│   └── YYYYMMDD_HHMMSS_ffffff.jpg
+├── meta/
+│   └── YYYYMMDD_HHMMSS_ffffff.json
+├── pet.csv      # Auto-generated for PET class
+├── can.csv      # Auto-generated for CAN class
+└── foreign.csv  # Auto-generated for FOREIGN class
 ```
 
-Metadata includes timestamp, class, attributes, camera settings, and session directory path.
+Metadata includes timestamp, class, attributes, camera settings, and image filename.
 
 ## CSV Export System
 
-The application provides two CSV export mechanisms:
+The application uses a simple class-based CSV export system:
 
-1. **Auto-export on save** (`io_utils.py:append_to_csv`):
-   - Automatically appends each saved frame to a daily CSV in `export_data/`
-   - Creates `export_YYYYMMDD.csv` with headers if not exists
+1. **Auto-export on save** (`io_utils.py:append_to_class_csv()`):
+   - Automatically appends each saved frame to the appropriate class CSV
+   - Creates `pet.csv`, `can.csv`, or `foreign.csv` with headers if not exists
    - Immediate availability for analysis without manual export
+   - Statistics loaded from these files on startup
 
-2. **Full export** (`export.py:export_all_sessions_to_csv`):
-   - Exports all historical data from `dataset/` directory
-   - Creates timestamped file: `full_export_YYYYMMDD_HHMMSS.csv`
-   - Scans all date directories and aggregates metadata
+2. **Manual full export** (`export.py:export_all_sessions_to_csv()`):
+   - Available for batch export of all historical data
+   - Creates timestamped file with all sessions aggregated
+   - Useful for creating complete dataset snapshots
 
 CSV features:
 - Boolean values converted to "да"/"нет" for readability
 - UTF-8 with BOM encoding for Excel compatibility
 - Configurable delimiter and timestamp inclusion via `config.yaml`
-- Flattened structure with `attr_` prefix for all attributes
+- Direct attribute columns (no `attr_` prefix in class-based CSVs)
 
 ## Interactive Camera Setup
 
@@ -188,9 +193,11 @@ The `AppConfig` dataclass uses a fallback pattern:
 
 The `load_class_spec()` function in `config.py` implements a flexible loading strategy:
 1. Try YAML with `.yaml` extension first
-2. Fallback to JSON with `.json` extension
+2. Fallback to JSON with `.json` extension (legacy support)
 3. Try exact path with extension detection
 4. Raise `FileNotFoundError` only if all attempts fail
+
+**Note**: JSON specifications have been removed. All classes now use YAML format exclusively (pet.yaml, can.yaml, foreign.yaml).
 
 ### Statistics Panel
 

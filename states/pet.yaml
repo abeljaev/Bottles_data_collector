@@ -55,6 +55,21 @@ attributes:
       - занимает всё
     default: в центре
 
+  # Направление горлышка бутылки
+  - name: neck_direction
+    label: Направление горлышка
+    type: enum
+    options:
+      - к отверстию
+      - от отверстия
+    default: к отверстию
+
+  # Наличие крышки на бутылке
+  - name: cap_present
+    label: Крышка есть?
+    type: bool
+    default: false
+
   # Мокрая поверхность
   - name: wet
     label: Мокрая
@@ -64,6 +79,18 @@ attributes:
   # Наличие конденсата
   - name: condensate
     label: Конденсат
+    type: bool
+    default: false
+
+  # Блики и глянцевые отражения
+  - name: glare
+    label: Блики/глянец
+    type: bool
+    default: false
+
+  # Наличие тени на изображении
+  - name: shadow
+    label: Тень
     type: bool
     default: false
 
