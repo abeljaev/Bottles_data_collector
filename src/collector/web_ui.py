@@ -1,6 +1,7 @@
 """
 Gradio web interface for the bottles classifier data collector.
 """
+
 from typing import Dict, Any, Optional
 import cv2 as cv
 import numpy as np
@@ -22,7 +23,7 @@ class GradioCollectorUI:
         can_spec: str = "states/states_can.json",
         foreign_spec: str = "states/states_non_target.json",
         output_dir: str = "dataset",
-        config: AppConfig = None
+        config: AppConfig = None,
     ):
         self.specs, self.defaults = specs_and_defaults(pet_spec, can_spec, foreign_spec)
         self.output_dir = output_dir
@@ -39,19 +40,18 @@ class GradioCollectorUI:
             class_name: defaults.copy()
             for class_name, defaults in self.defaults.items()
         }
-        self.current_class = "PET" if "PET" in self.class_attributes else next(iter(self.class_attributes.keys()))
+        self.current_class = (
+            "PET"
+            if "PET" in self.class_attributes
+            else next(iter(self.class_attributes.keys()))
+        )
         self.class_attribute_specs: Dict[str, Dict[str, Dict[str, Any]]] = {
             class_name: {attr["name"]: attr for attr in spec["attributes"]}
             for class_name, spec in self.specs.items()
         }
 
         # Statistics tracking
-        self.statistics = {
-            "PET": 0,
-            "CAN": 0,
-            "FOREIGN": 0,
-            "total": 0
-        }
+        self.statistics = {"PET": 0, "CAN": 0, "FOREIGN": 0, "total": 0}
 
         logger.info("Gradio UI initialized")
 
@@ -63,7 +63,7 @@ class GradioCollectorUI:
                 csv_path = root_dir / f"{class_name.lower()}.csv"
                 if csv_path.exists():
                     # Count lines minus header
-                    with open(csv_path, 'r', encoding=self.config.csv_encoding) as f:
+                    with open(csv_path, "r", encoding=self.config.csv_encoding) as f:
                         line_count = sum(1 for _ in f) - 1  # Subtract header
                         if line_count > 0:
                             self.statistics[class_name] = line_count
@@ -73,8 +73,10 @@ class GradioCollectorUI:
                 self.statistics[cls] for cls in ["PET", "CAN", "FOREIGN"]
             )
 
-            logger.info(f"Loaded statistics: PET={self.statistics['PET']}, "
-                       f"CAN={self.statistics['CAN']}, FOREIGN={self.statistics['FOREIGN']}")
+            logger.info(
+                f"Loaded statistics: PET={self.statistics['PET']}, "
+                f"CAN={self.statistics['CAN']}, FOREIGN={self.statistics['FOREIGN']}"
+            )
         except Exception as e:
             logger.warning(f"Could not load statistics from CSV: {e}")
 
@@ -85,6 +87,7 @@ class GradioCollectorUI:
                 self.cap.release()
 
             self.cap = cv.VideoCapture(camera_id)
+            self.cap.set(cv.CAP_PROP_FOURCC, cv.VideoWriter_fourcc(*"MJPG"))
             self.cap.set(cv.CAP_PROP_FRAME_WIDTH, width)
             self.cap.set(cv.CAP_PROP_FRAME_HEIGHT, height)
             self.cap.set(cv.CAP_PROP_FPS, fps)
@@ -99,7 +102,9 @@ class GradioCollectorUI:
             # Load statistics from existing CSV files
             self.load_statistics_from_csv()
 
-            logger.success(f"Camera {camera_id} initialized: {width}x{height} @ {fps} FPS")
+            logger.success(
+                f"Camera {camera_id} initialized: {width}x{height} @ {fps} FPS"
+            )
             logger.success(f"Dataset directory: {self.dataset_dir}")
             return True
         except Exception as e:
@@ -111,8 +116,15 @@ class GradioCollectorUI:
         if self.cap is None or not self.cap.isOpened():
             # Return placeholder image
             placeholder = np.zeros((480, 640, 3), dtype=np.uint8)
-            cv.putText(placeholder, "No camera", (200, 240),
-                      cv.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+            cv.putText(
+                placeholder,
+                "No camera",
+                (200, 240),
+                cv.FONT_HERSHEY_SIMPLEX,
+                1,
+                (255, 255, 255),
+                2,
+            )
             return placeholder
 
         ret, frame = self.cap.read()
@@ -171,7 +183,9 @@ class GradioCollectorUI:
             }
 
             # Save image and metadata
-            img_path, json_path = save_sample(self.dataset_dir, self.current_frame, meta)
+            img_path, json_path = save_sample(
+                self.dataset_dir, self.current_frame, meta
+            )
 
             # Auto-export to class-specific CSV (pet.csv, can.csv, foreign.csv)
             append_to_class_csv(
@@ -180,14 +194,16 @@ class GradioCollectorUI:
                 img_path.name,
                 meta,
                 delimiter=self.config.csv_delimiter,
-                encoding=self.config.csv_encoding
+                encoding=self.config.csv_encoding,
             )
 
             # Update statistics
             self.statistics[self.current_class] += 1
             self.statistics["total"] += 1
 
-            logger.success(f"Saved: {img_path.name} + {json_path.name} -> {self.current_class.lower()}.csv")
+            logger.success(
+                f"Saved: {img_path.name} + {json_path.name} -> {self.current_class.lower()}.csv"
+            )
             return f"✅ Сохранено: {img_path.name}"
         except Exception as e:
             logger.error(f"Error saving frame: {e}")

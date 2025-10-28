@@ -1,11 +1,20 @@
 """Main application entry point with camera selection and Gradio UI."""
+
 # IMPORTANT: Set OpenCV environment variables BEFORE importing cv2
 import os
-os.environ.setdefault('OPENCV_LOG_LEVEL', 'ERROR')
-os.environ.setdefault('OPENCV_VIDEOIO_DEBUG', '0')
+
+os.environ.setdefault("OPENCV_LOG_LEVEL", "ERROR")
+os.environ.setdefault("OPENCV_VIDEOIO_DEBUG", "0")
 
 # IMPORTANT: Clear proxy environment variables BEFORE importing gradio
-for proxy_var in ['HTTP_PROXY', 'HTTPS_PROXY', 'http_proxy', 'https_proxy', 'ALL_PROXY', 'all_proxy']:
+for proxy_var in [
+    "HTTP_PROXY",
+    "HTTPS_PROXY",
+    "http_proxy",
+    "https_proxy",
+    "ALL_PROXY",
+    "all_proxy",
+]:
     os.environ.pop(proxy_var, None)
 
 from datetime import datetime
@@ -28,9 +37,10 @@ console = Console()
 
 class SuppressStderr:
     """Context manager to suppress stderr output."""
+
     def __enter__(self):
         self._original_stderr = sys.stderr
-        sys.stderr = open(os.devnull, 'w')
+        sys.stderr = open(os.devnull, "w")
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -54,6 +64,7 @@ def get_camera_modes(cam_id: int) -> List[Dict[str, Any]]:
     """Get supported camera modes (resolution + FPS)."""
     with SuppressStderr():
         cap = cv.VideoCapture(cam_id)
+        cap.set(cv.CAP_PROP_FOURCC, cv.VideoWriter_fourcc(*"MJPG"))
         if not cap.isOpened():
             return []
 
@@ -63,6 +74,7 @@ def get_camera_modes(cam_id: int) -> List[Dict[str, Any]]:
             (800, 600),
             (1280, 720),
             (1920, 1080),
+            (2592, 1944),
             (2560, 1440),
             (3840, 2160),
         ]
@@ -88,11 +100,13 @@ def get_camera_modes(cam_id: int) -> List[Dict[str, Any]]:
                     mode_key = (actual_w, actual_h, int(actual_fps))
                     if mode_key not in seen:
                         seen.add(mode_key)
-                        modes.append({
-                            "width": actual_w,
-                            "height": actual_h,
-                            "fps": int(actual_fps)
-                        })
+                        modes.append(
+                            {
+                                "width": actual_w,
+                                "height": actual_h,
+                                "fps": int(actual_fps),
+                            }
+                        )
 
         cap.release()
 
@@ -116,7 +130,11 @@ def select_camera(max_devices: int = 10) -> int:
 
     logger.success(f"Found {len(cameras)} camera(s)")
 
-    table = Table(title=f"✓ Найдено камер: {len(cameras)}", show_header=True, header_style="bold magenta")
+    table = Table(
+        title=f"✓ Найдено камер: {len(cameras)}",
+        show_header=True,
+        header_style="bold magenta",
+    )
     table.add_column("№", style="cyan", justify="center")
     table.add_column("ID Камеры", style="green")
 
@@ -129,7 +147,7 @@ def select_camera(max_devices: int = 10) -> int:
         try:
             choice = IntPrompt.ask(
                 f"\n[bold yellow]Выберите камеру[/bold yellow]",
-                choices=[str(i) for i in range(1, len(cameras) + 1)]
+                choices=[str(i) for i in range(1, len(cameras) + 1)],
             )
             selected_cam = cameras[choice - 1]
             logger.info(f"Selected camera {selected_cam}")
@@ -142,7 +160,9 @@ def select_camera(max_devices: int = 10) -> int:
 
 def select_mode(cam_id: int) -> Dict[str, Any]:
     """Interactive mode selection menu."""
-    console.print(Panel.fit(f"🎥 [bold cyan]ОПРЕДЕЛЕНИЕ РЕЖИМОВ КАМЕРЫ {cam_id}...[/bold cyan]"))
+    console.print(
+        Panel.fit(f"🎥 [bold cyan]ОПРЕДЕЛЕНИЕ РЕЖИМОВ КАМЕРЫ {cam_id}...[/bold cyan]")
+    )
 
     logger.info(f"Detecting camera modes for camera {cam_id}")
     modes = get_camera_modes(cam_id)
@@ -151,18 +171,24 @@ def select_mode(cam_id: int) -> Dict[str, Any]:
         console.print("[bold red]❌ Не удалось определить режимы камеры![/bold red]")
         logger.warning("Could not detect camera modes, using default")
         default_mode = {"width": 1280, "height": 720, "fps": 30}
-        console.print(f"[yellow]Используется режим по умолчанию: {default_mode['width']}x{default_mode['height']} @ {default_mode['fps']} FPS[/yellow]")
+        console.print(
+            f"[yellow]Используется режим по умолчанию: {default_mode['width']}x{default_mode['height']} @ {default_mode['fps']} FPS[/yellow]"
+        )
         return default_mode
 
     logger.success(f"Found {len(modes)} mode(s)")
 
-    table = Table(title=f"✓ Найдено режимов: {len(modes)}", show_header=True, header_style="bold magenta")
+    table = Table(
+        title=f"✓ Найдено режимов: {len(modes)}",
+        show_header=True,
+        header_style="bold magenta",
+    )
     table.add_column("№", style="cyan", justify="center")
     table.add_column("Разрешение", style="green")
     table.add_column("FPS", style="yellow", justify="right")
 
     for idx, mode in enumerate(modes, 1):
-        table.add_row(str(idx), f"{mode['width']}x{mode['height']}", str(mode['fps']))
+        table.add_row(str(idx), f"{mode['width']}x{mode['height']}", str(mode["fps"]))
 
     console.print(table)
 
@@ -170,10 +196,12 @@ def select_mode(cam_id: int) -> Dict[str, Any]:
         try:
             choice = IntPrompt.ask(
                 f"\n[bold yellow]Выберите режим[/bold yellow]",
-                choices=[str(i) for i in range(1, len(modes) + 1)]
+                choices=[str(i) for i in range(1, len(modes) + 1)],
             )
             selected_mode = modes[choice - 1]
-            logger.info(f"Selected mode: {selected_mode['width']}x{selected_mode['height']} @ {selected_mode['fps']} FPS")
+            logger.info(
+                f"Selected mode: {selected_mode['width']}x{selected_mode['height']} @ {selected_mode['fps']} FPS"
+            )
             return selected_mode
         except KeyboardInterrupt:
             console.print("\n\n[bold yellow]👋 Прервано пользователем[/bold yellow]")
@@ -181,7 +209,9 @@ def select_mode(cam_id: int) -> Dict[str, Any]:
             exit(0)
 
 
-def create_gradio_interface(ui: GradioCollectorUI, cam_id: int, mode: Dict[str, Any], show_stats: bool = True) -> gr.Blocks:
+def create_gradio_interface(
+    ui: GradioCollectorUI, cam_id: int, mode: Dict[str, Any], show_stats: bool = True
+) -> gr.Blocks:
     """Create the Gradio interface."""
 
     # Custom CSS for layout
@@ -200,7 +230,11 @@ def create_gradio_interface(ui: GradioCollectorUI, cam_id: int, mode: Dict[str, 
     }
     """
 
-    with gr.Blocks(title="Bottles Classifier Data Collector", theme=gr.themes.Soft(), css=custom_css) as demo:
+    with gr.Blocks(
+        title="Bottles Classifier Data Collector",
+        theme=gr.themes.Soft(),
+        css=custom_css,
+    ) as demo:
         gr.Markdown("# 🎥 Сборщик данных для классификатора бутылок")
 
         with gr.Row(equal_height=True):
@@ -210,7 +244,7 @@ def create_gradio_interface(ui: GradioCollectorUI, cam_id: int, mode: Dict[str, 
                     label=f"Камера {cam_id} — {mode['width']}x{mode['height']} @ {mode['fps']} FPS",
                     show_label=True,
                     elem_id="video-output",
-                    container=True
+                    container=True,
                 )
 
                 gr.Markdown(
@@ -248,7 +282,7 @@ def create_gradio_interface(ui: GradioCollectorUI, cam_id: int, mode: Dict[str, 
                     value=ui.current_class,
                     label="Класс объекта",
                     interactive=True,
-                    info="Выбор влияет на состав атрибутов"
+                    info="Выбор влияет на состав атрибутов",
                 )
 
                 gr.Markdown(
@@ -262,7 +296,9 @@ def create_gradio_interface(ui: GradioCollectorUI, cam_id: int, mode: Dict[str, 
                 attribute_components_order = []
 
                 for class_name, spec in ui.specs.items():
-                    with gr.Group(visible=(class_name == ui.current_class)) as class_group:
+                    with gr.Group(
+                        visible=(class_name == ui.current_class)
+                    ) as class_group:
                         for attr in spec["attributes"]:
                             attr_name = attr["name"]
                             attr_label = attr.get("label", attr_name)
@@ -272,10 +308,11 @@ def create_gradio_interface(ui: GradioCollectorUI, cam_id: int, mode: Dict[str, 
                                 widget = gr.Radio(
                                     choices=attr["options"],
                                     value=ui.class_attributes[class_name].get(
-                                        attr_name, attr.get("default", attr["options"][0])
+                                        attr_name,
+                                        attr.get("default", attr["options"][0]),
                                     ),
                                     label=attr_label,
-                                    interactive=True
+                                    interactive=True,
                                 )
                             elif attr_type == "bool":
                                 widget = gr.Checkbox(
@@ -283,7 +320,7 @@ def create_gradio_interface(ui: GradioCollectorUI, cam_id: int, mode: Dict[str, 
                                         attr_name, attr.get("default", False)
                                     ),
                                     label=attr_label,
-                                    interactive=True
+                                    interactive=True,
                                 )
                             elif attr_type == "text":
                                 widget = gr.Textbox(
@@ -293,34 +330,44 @@ def create_gradio_interface(ui: GradioCollectorUI, cam_id: int, mode: Dict[str, 
                                     label=attr_label,
                                     lines=1,
                                     interactive=True,
-                                    placeholder="Введите текст..."
+                                    placeholder="Введите текст...",
                                 )
                             else:
                                 continue
 
-                            pending_attribute_handlers.append((widget, class_name, attr_name))
-                            attribute_components_order.append((class_name, attr_name, widget))
+                            pending_attribute_handlers.append(
+                                (widget, class_name, attr_name)
+                            )
+                            attribute_components_order.append(
+                                (class_name, attr_name, widget)
+                            )
 
                         class_groups[class_name] = class_group
 
                 class_group_keys = list(class_groups.keys())
                 class_group_list = [class_groups[name] for name in class_group_keys]
-                attribute_component_list = [component for (_, _, component) in attribute_components_order]
+                attribute_component_list = [
+                    component for (_, _, component) in attribute_components_order
+                ]
 
-                reset_button = gr.Button("↩️ Сбросить атрибуты", variant="secondary", size="sm")
+                reset_button = gr.Button(
+                    "↩️ Сбросить атрибуты", variant="secondary", size="sm"
+                )
 
                 gr.Markdown("---")
 
-                save_button = gr.Button("💾 Сохранить кадр", variant="primary", size="lg")
+                save_button = gr.Button(
+                    "💾 Сохранить кадр", variant="primary", size="lg"
+                )
                 save_status = gr.Markdown(value="Готово к сохранению")
 
                 for component, class_name, attr_name in pending_attribute_handlers:
+
                     def make_attr_handler(attribute_name: str, target_class: str):
                         def _handler(value):
                             ui.update_attribute(target_class, attribute_name, value)
                             attr_label = (
-                                ui.class_attribute_specs
-                                .get(target_class, {})
+                                ui.class_attribute_specs.get(target_class, {})
                                 .get(attribute_name, {})
                                 .get("label", attribute_name)
                             )
@@ -333,15 +380,14 @@ def create_gradio_interface(ui: GradioCollectorUI, cam_id: int, mode: Dict[str, 
                         make_attr_handler(attr_name, class_name),
                         inputs=[component],
                         outputs=[save_status],
-                        queue=False
+                        queue=False,
                     )
 
                 # Statistics panel (if enabled)
                 if show_stats:
                     gr.Markdown("---")
                     statistics_display = gr.Markdown(
-                        value=ui.get_statistics(),
-                        label="Статистика"
+                        value=ui.get_statistics(), label="Статистика"
                     )
 
         # Video streaming using timer
@@ -357,14 +403,18 @@ def create_gradio_interface(ui: GradioCollectorUI, cam_id: int, mode: Dict[str, 
             ui.update_class(new_class)
 
             state_update = new_class
-            status_message = f"✅ Активный класс: {class_labels.get(new_class, new_class)}"
+            status_message = (
+                f"✅ Активный класс: {class_labels.get(new_class, new_class)}"
+            )
 
             group_updates = []
             for idx, name in enumerate(class_group_keys):
                 group_updates.append(gr.update(visible=(name == new_class)))
 
             component_updates = []
-            for idx, (class_name, attr_name, _) in enumerate(attribute_components_order):
+            for idx, (class_name, attr_name, _) in enumerate(
+                attribute_components_order
+            ):
                 if class_name == new_class:
                     value = ui.class_attributes[class_name].get(attr_name)
                     component_updates.append(gr.update(value=value))
@@ -386,6 +436,7 @@ def create_gradio_interface(ui: GradioCollectorUI, cam_id: int, mode: Dict[str, 
 
         # Save button
         if show_stats:
+
             def save_and_update_stats():
                 result = ui.save_current_frame()
                 stats = ui.get_statistics()
@@ -400,10 +451,14 @@ def create_gradio_interface(ui: GradioCollectorUI, cam_id: int, mode: Dict[str, 
 
         def on_reset(class_name):
             ui.reset_attributes(class_name)
-            status_message = f"🔄 Атрибуты сброшены для: {class_labels.get(class_name, class_name)}"
+            status_message = (
+                f"🔄 Атрибуты сброшены для: {class_labels.get(class_name, class_name)}"
+            )
 
             component_updates = []
-            for idx, (attr_class, attr_name, _) in enumerate(attribute_components_order):
+            for idx, (attr_class, attr_name, _) in enumerate(
+                attribute_components_order
+            ):
                 if attr_class == class_name:
                     value = ui.class_attributes[attr_class].get(attr_name)
                     component_updates.append(gr.update(value=value))
@@ -431,14 +486,14 @@ def main():
 
     # Update OpenCV warning suppression based on config
     if config.suppress_camera_warnings:
-        os.environ['OPENCV_LOG_LEVEL'] = 'SILENT'
+        os.environ["OPENCV_LOG_LEVEL"] = "SILENT"
 
     # Configure logger
     logger.remove()  # Remove default handler
     logger.add(
         lambda msg: console.print(msg, end=""),
         format=config.log_format,
-        level=config.log_level
+        level=config.log_level,
     )
 
     logger.info(f"Starting {config.app_title} v{config.app_version}")
@@ -450,21 +505,31 @@ def main():
     mode = select_mode(cam_id)
 
     # Display startup configuration
-    config_table = Table(title="⚙️  Конфигурация сборщика", show_header=True, header_style="bold cyan")
+    config_table = Table(
+        title="⚙️  Конфигурация сборщика", show_header=True, header_style="bold cyan"
+    )
     config_table.add_column("Параметр", style="magenta")
     config_table.add_column("Значение", style="green")
 
     config_table.add_row("📷 Камера", str(cam_id))
     config_table.add_row("🎥 Разрешение", f"{mode['width']}x{mode['height']}")
-    config_table.add_row("⚡ FPS", str(mode['fps']))
+    config_table.add_row("⚡ FPS", str(mode["fps"]))
     config_table.add_row("💾 Директория", config.output_dir)
 
     console.print()
-    console.print(Panel(config_table, title="[bold green]ЗАПУСК СБОРЩИКА ДАННЫХ[/bold green]", border_style="green"))
+    console.print(
+        Panel(
+            config_table,
+            title="[bold green]ЗАПУСК СБОРЩИКА ДАННЫХ[/bold green]",
+            border_style="green",
+        )
+    )
     console.print()
 
     # Initialize UI
-    ui = GradioCollectorUI(config.pet_spec, config.can_spec, config.foreign_spec, config.output_dir, config)
+    ui = GradioCollectorUI(
+        config.pet_spec, config.can_spec, config.foreign_spec, config.output_dir, config
+    )
 
     # Setup camera
     if not ui.setup_camera(cam_id, mode["width"], mode["height"], mode["fps"]):
@@ -484,7 +549,7 @@ def main():
             share=False,
             inbrowser=config.auto_open_browser,
             show_error=True,
-            prevent_thread_lock=False  # Block until closed
+            prevent_thread_lock=False,  # Block until closed
         )
     except KeyboardInterrupt:
         logger.info("Shutting down...")
