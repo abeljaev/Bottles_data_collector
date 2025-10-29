@@ -1,96 +1,67 @@
-# Спецификация атрибутов для класса CAN (Алюминиевые банки)
-
 class: CAN
-
 attributes:
-  # Степень деформации банки
   - name: deformation
     label: Деформация
     type: enum
-    options:
-      - нет
-      - лёгкая
-      - сильная
+    options: [нет, лёгкая, сильная]
     default: нет
 
-  # Уровень заполнения
   - name: fill
     label: Заполнение
     type: enum
-    options:
-      - пустая
-      - мало
-      - средне
-      - почти полная
+    options: [пустая, мало, средне, почти полная]
     default: пустая
 
-  # Тип покрытия поверхности
   - name: finish
     label: Покрытие
     type: enum
-    options:
-      - матовая
-      - глянцевая
-    default: матовая
+    options: [глянцевая, матовая]
+    default: глянцевая
 
-  # Наличие этикетки
-  - name: label
-    label: Этикетка
+  - name: decoration
+    label: Декор
     type: enum
-    options:
-      - нет
-      - частично
-      - полная
-    default: нет
+    options: [печать на банке, бумажная этикетка, термоусадка, без декора]
+    default: печать на банке
 
-  # Расположение относительно отверстия короба
+  - name: opener_state
+    label: Язычок
+    type: enum
+    options: [закрыт, открыт наружу, открыт внутрь, оторван]
+    default: закрыт
+
   - name: position
     label: Позиция в коробе
     type: enum
-    options:
-      - далеко от отверстия
-      - в центре
-      - близко к отверстию
-      - занимает всё
+    options: [далеко от отверстия, в центре, близко к отверстию, занимает всё]
     default: в центре
 
-  # Мокрая поверхность
   - name: wet
     label: Мокрая
     type: bool
     default: false
 
-  # Наличие конденсата
   - name: condensate
     label: Конденсат
     type: bool
     default: false
 
-  # Блики и глянцевые отражения
   - name: glare
     label: Блики/глянец
     type: bool
     default: false
 
-  # Наличие тени на изображении
   - name: shadow
     label: Тень
     type: bool
     default: false
 
-  # Объем банки
   - name: volume
     label: Объем
     type: enum
-    options:
-      - 250 мл
-      - 300 мл
-      - 330 мл
-      - 500 мл
-      - другое
+    options: [250 мл, 300 мл, 330 мл, 440 мл, 473 мл, 500 мл, другое]
     default: 330 мл
 
-  # Название/бренд (свободный ввод)
   - name: container_name
     label: Название тары
     type: text
