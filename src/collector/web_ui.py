@@ -30,6 +30,26 @@ class GradioCollectorUI:
         self.dataset_dir = None
         self.config = config or AppConfig()
 
+        self.preview_max_width = self._sanitize_preview_dimension(
+            getattr(self.config, "preview_max_width", None)
+        )
+        self.preview_max_height = self._sanitize_preview_dimension(
+            getattr(self.config, "preview_max_height", None)
+        )
+        interpolation_map = {
+            "nearest": cv.INTER_NEAREST,
+            "linear": cv.INTER_LINEAR,
+            "area": cv.INTER_AREA,
+            "cubic": cv.INTER_CUBIC,
+            "lanczos": cv.INTER_LANCZOS4,
+        }
+        interpolation_key = (
+            getattr(self.config, "preview_interpolation", "area") or "area"
+        ).lower()
+        self.preview_interpolation = interpolation_map.get(
+            interpolation_key, cv.INTER_AREA
+        )
+
         # Camera state
         self.cap: Optional[cv.VideoCapture] = None
         self.current_frame: Optional[np.ndarray] = None
@@ -131,12 +151,14 @@ class GradioCollectorUI:
         if ret:
             # Store in original BGR format from camera
             self.current_frame = frame
+            preview_frame = self._resize_for_preview(frame)
             # Convert BGR to RGB for Gradio display only
-            return cv.cvtColor(frame, cv.COLOR_BGR2RGB)
+            return cv.cvtColor(preview_frame, cv.COLOR_BGR2RGB)
         else:
             # Return last frame converted to RGB
             if self.current_frame is not None:
-                return cv.cvtColor(self.current_frame, cv.COLOR_BGR2RGB)
+                preview_frame = self._resize_for_preview(self.current_frame)
+                return cv.cvtColor(preview_frame, cv.COLOR_BGR2RGB)
             return np.zeros((480, 640, 3), dtype=np.uint8)
 
     def update_class(self, selected_class: str) -> None:
@@ -224,3 +246,35 @@ class GradioCollectorUI:
         if self.cap is not None:
             self.cap.release()
             logger.info("Camera released")
+
+    @staticmethod
+    def _sanitize_preview_dimension(value: Optional[int]) -> Optional[int]:
+        """Return a positive integer value or None if not set."""
+        if value is None:
+            return None
+        try:
+            dimension = int(value)
+        except (TypeError, ValueError):
+            return None
+        return dimension if dimension > 0 else None
+
+    def _resize_for_preview(self, frame: np.ndarray) -> np.ndarray:
+        """Resize frame to configured preview bounds while keeping aspect ratio."""
+        if self.preview_max_width is None and self.preview_max_height is None:
+            return frame
+
+        height, width = frame.shape[:2]
+        scale_w = (
+            self.preview_max_width / width if self.preview_max_width else 1.0
+        )
+        scale_h = (
+            self.preview_max_height / height if self.preview_max_height else 1.0
+        )
+        scale = min(scale_w, scale_h, 1.0)
+
+        if scale >= 1.0:
+            return frame
+
+        new_width = max(1, int(width * scale))
+        new_height = max(1, int(height * scale))
+        return cv.resize(frame, (new_width, new_height), interpolation=self.preview_interpolation)

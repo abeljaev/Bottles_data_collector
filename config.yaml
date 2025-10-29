@@ -48,6 +48,10 @@ ui:
   # Video display
   video:
     update_interval: 0.033  # ~30 FPS
+    preview:
+      max_width: 1280   # Set to null to disable downscaling
+      max_height: 720   # Set to null to disable downscaling
+      interpolation: "area"  # options: nearest, linear, area, cubic, lanczos
 
   # Attributes panel
   attributes:

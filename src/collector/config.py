@@ -3,7 +3,7 @@ Configuration management for the collector application.
 """
 import yaml
 from pathlib import Path
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from dataclasses import dataclass, field
 from loguru import logger
 
@@ -43,6 +43,9 @@ class AppConfig:
     video_update_interval: float = 0.033
     attributes_max_height: str = "70vh"
     show_statistics: bool = True
+    preview_max_width: Optional[int] = 1280
+    preview_max_height: Optional[int] = 720
+    preview_interpolation: str = "area"
 
     # Font
     font_path: str = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
@@ -101,6 +104,11 @@ class AppConfig:
                 config.ui_theme = data['ui'].get('theme', config.ui_theme)
                 if 'video' in data['ui']:
                     config.video_update_interval = data['ui']['video'].get('update_interval', config.video_update_interval)
+                    if 'preview' in data['ui']['video']:
+                        preview_cfg = data['ui']['video']['preview']
+                        config.preview_max_width = preview_cfg.get('max_width', config.preview_max_width)
+                        config.preview_max_height = preview_cfg.get('max_height', config.preview_max_height)
+                        config.preview_interpolation = preview_cfg.get('interpolation', config.preview_interpolation)
                 if 'attributes' in data['ui']:
                     config.attributes_max_height = data['ui']['attributes'].get('max_height', config.attributes_max_height)
                 if 'statistics' in data['ui']:
