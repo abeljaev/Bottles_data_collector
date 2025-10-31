@@ -31,6 +31,7 @@ wheels/
 dataset/
 export_data/
 *.csv
+STATS.md
 
 # Logs
 *.log

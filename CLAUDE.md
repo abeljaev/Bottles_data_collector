@@ -24,6 +24,21 @@ The application uses an interactive menu system:
 2. Probes camera capabilities and displays available modes (resolution + FPS)
 3. Launches the data collector with selected configuration
 
+## Generating Statistics
+
+To analyze collected data, run the statistics generator:
+
+```bash
+python3 generate_stats.py
+```
+
+This creates/updates `STATS.md` with tables showing:
+- Records count per `container_name` for each class
+- Attribute value distributions for each container type
+- Overall statistics across all attributes
+
+The file is auto-generated and listed in `.gitignore`.
+
 Configuration is loaded from `config.yaml` in project root:
 - Application settings (title, version, server host/port)
 - Camera settings (max devices to probe, warning suppression)
