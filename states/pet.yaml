@@ -88,11 +88,15 @@ attributes:
     type: bool
     default: false
 
-  # Наличие тени на изображении
-  - name: shadow
-    label: Тень
-    type: bool
-    default: false
+  # Загрязнение поверхности
+  - name: dirt
+    label: Грязь
+    type: enum
+    options:
+      - нет
+      - немного
+      - сильно
+    default: нет
 
   # Объем тары
   - name: volume

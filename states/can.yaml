@@ -41,20 +41,21 @@ attributes:
     type: bool
     default: false
 
-  - name: condensate
-    label: Конденсат
-    type: bool
-    default: false
-
   - name: glare
     label: Блики/глянец
     type: bool
     default: false
 
-  - name: shadow
-    label: Тень
+  - name: label_attached
+    label: Этикетка приклеена
     type: bool
     default: false
+
+  - name: dirt
+    label: Грязь
+    type: enum
+    options: [нет, немного, сильно]
+    default: нет
 
   - name: volume
     label: Объем
