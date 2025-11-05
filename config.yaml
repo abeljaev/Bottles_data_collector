@@ -36,9 +36,9 @@ data:
 
 # Class specifications (YAML files)
 classes:
-  pet: "states/pet.yaml"
-  can: "states/can.yaml"
-  foreign: "states/foreign.yaml"
+  pet: "tags/pet.yaml"
+  can: "tags/can.yaml"
+  foreign: "tags/foreign.yaml"
 
 # UI settings
 ui:

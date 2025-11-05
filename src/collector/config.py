@@ -34,9 +34,9 @@ class AppConfig:
     image_quality: int = 95
 
     # Class specifications
-    pet_spec: str = "states/pet.yaml"
-    can_spec: str = "states/can.yaml"
-    foreign_spec: str = "states/foreign.yaml"
+    pet_spec: str = "tags/pet.yaml"
+    can_spec: str = "tags/can.yaml"
+    foreign_spec: str = "tags/foreign.yaml"
 
     # UI settings
     ui_theme: str = "soft"

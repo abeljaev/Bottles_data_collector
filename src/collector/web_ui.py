@@ -19,9 +19,9 @@ class GradioCollectorUI:
 
     def __init__(
         self,
-        pet_spec: str = "states/states_pet.json",
-        can_spec: str = "states/states_can.json",
-        foreign_spec: str = "states/states_non_target.json",
+        pet_spec: str = "tags/pet.yaml",
+        can_spec: str = "tags/can.yaml",
+        foreign_spec: str = "tags/foreign.yaml",
         output_dir: str = "dataset",
         config: AppConfig = None,
     ):

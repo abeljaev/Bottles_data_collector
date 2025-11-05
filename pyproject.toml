@@ -16,7 +16,8 @@ dependencies = [
     "gradio>=4.0",
     "httpx[socks]",
     "pyyaml>=6.0",
-    "pandas>=2.0"  # For CSV export
+    "pandas>=2.0",  # For CSV export
+    "huggingface-hub>=0.20.0"  # For dataset upload
 ]
 
 [project.scripts]

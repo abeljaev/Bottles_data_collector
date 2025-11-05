@@ -39,10 +39,38 @@ This creates/updates `STATS.md` with tables showing:
 
 The file is auto-generated and listed in `.gitignore`.
 
+## Uploading Dataset to Hugging Face
+
+To upload the collected dataset to Hugging Face Hub:
+
+```bash
+# Install dependencies if needed
+uv sync
+
+# Set your Hugging Face token
+export HF_TOKEN="your_token_here"
+
+# Full upload (first time)
+python3 upload_to_hf.py --repo-id "ChilledAndRelaxed/ContainerClassification"
+
+# Incremental update (only new files)
+python3 upload_to_hf.py --repo-id "ChilledAndRelaxed/ContainerClassification" --incremental
+
+# Private repository
+python3 upload_to_hf.py --repo-id "ChilledAndRelaxed/ContainerClassification" --private
+```
+
+The script automatically:
+- Creates/updates the repository on Hugging Face Hub
+- Generates README.md with dataset statistics and metadata
+- Uploads images, metadata, and CSV files
+- Supports incremental updates (only uploads new files)
+- Uses multi-threaded upload for better performance
+
 Configuration is loaded from `config.yaml` in project root:
 - Application settings (title, version, server host/port)
 - Camera settings (max devices to probe, warning suppression)
-- Class specification file paths (YAML files in `states/`)
+- Class specification file paths (YAML files in `tags/`)
 - UI settings (theme, statistics display, scrolling)
 - Export settings (CSV delimiter, encoding, timestamp inclusion)
 
@@ -79,7 +107,7 @@ The `AppState` dataclass (in `collector.py`) tracks:
 - `active_text_field`: Name of currently active text field for editing
 - `text_input_buffer`: Temporary buffer for text input
 
-Attribute specifications are loaded from YAML files in `states/` directory, which define:
+Attribute specifications are loaded from YAML files in `tags/` directory, which define:
 - `enum` attributes: Radio button selection (e.g., "deformation", "fill", "volume", "neck_direction")
 - `bool` attributes: Checkbox toggles (e.g., "wet", "condensate", "cap_present", "glare", "shadow")
 - `text` attributes: Text input fields (e.g., "container_name") with full Unicode support
@@ -233,7 +261,7 @@ The Gradio interface uses `gr.Timer` for video streaming:
 
 ### Adding New Attributes
 
-1. Edit the relevant YAML file in `states/` (pet.yaml, can.yaml, or foreign.yaml)
+1. Edit the relevant YAML file in `tags/` (pet.yaml, can.yaml, or foreign.yaml)
 2. Add new attribute definition:
    ```yaml
    - name: new_attribute
@@ -248,7 +276,7 @@ The Gradio interface uses `gr.Timer` for video streaming:
 
 ### Adding New Classes
 
-1. Create new YAML specification file in `states/`
+1. Create new YAML specification file in `tags/`
 2. Update `config.yaml` to reference new spec file
 3. Update `specs_and_defaults()` in `collector.py` to include new class
 4. Update class radio choices in `create_gradio_interface()` in `app.py`
